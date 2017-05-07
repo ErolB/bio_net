@@ -13,12 +13,13 @@ cursor = conn.cursor()
 cursor.execute('CREATE TABLE IF NOT EXISTS mutations(sample_id INT, gene VARCHAR(20));')
 os.chdir('./cancer')
 files = os.listdir('.')
-cursor.execute('SELECT DISTINCT sample_id FROM mutations;')
-included_samples = [int(entry[0]) for entry in cursor.fetchall()]
+cursor.execute('SELECT DISTINCT file_name FROM mutation_files;')
+included_samples = [entry[0] for entry in cursor.fetchall()]
 sample_id = len(included_samples)
 for file_name in files:
     # check if sample is already included
-    if (sample_id in included_samples):
+    if (file_name in included_samples):
+        print(file_name + " already included")
         continue
     # open file and read
     print('processing ' + file_name)

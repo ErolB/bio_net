@@ -1,4 +1,4 @@
-ITERATION_COUNT = 100000
+ITERATION_COUNT = 10000
 
 import random
 import pymysql
@@ -6,6 +6,7 @@ import pymysql
 class Graph(object):
     def __init__(self, node_names):
         self.connections = {}  # dictionary of dictionaries
+        self.original_connections = {}  # used to restore original settings
         self.nodes = {}
         for name in node_names:
             self.connections[name] = {}  # create a dictionary of connections for each node
@@ -15,6 +16,12 @@ class Graph(object):
         for source in source_names:
             for target in target_names:
                 self.connections[source][target] = probability
+    # sets the current state as the original
+    def sync(self):
+        self.original_connections = self.connections
+    # restores original state
+    def restore(self):
+        self.connections = self.original_connections
     # perform a Monte Carlo simulation
     def simulate(self, source_names):
         visits = {}
@@ -62,6 +69,7 @@ def build_network(file_name):
         target_names = entries[1].split('|')
         probability = float(entries[2])
         graph.add_connection(source_names, target_names, probability)
+    graph.sync()  # define the current state as the original state
     return graph
 
 def load_mutations(sample_id, db_cursor, db_name):
@@ -83,9 +91,10 @@ if __name__ == '__main__':
     conn = pymysql.connect(host='localhost', user='root', password='admin', db='bio')
     cursor = conn.cursor()
     graph = build_network('networks/cell_cycle.txt')
-    mutations = load_mutations(7, cursor, 'mutations')
+    mutations = load_mutations(0, cursor, 'mutations')
     control = load_mutations(0, cursor, 'control')
-    node_set = [item for item in graph.nodes.keys()][20:30]
+    node_set = ['hsa:4088', 'hsa:5933', 'hsa:5001', 'hsa:4087', 'hsa:4173', 'hsa:1028', 'hsa:9232', 'hsa:4616', 'hsa:990', 'hsa:10459']
+    print(node_set)
     print(graph.simulate(node_set))
     graph.knockout(control)
     print(graph.simulate(node_set))
