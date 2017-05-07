@@ -1,3 +1,5 @@
+# builds table mapping gene names to KEGG IDs
+
 import requests
 import pymysql
 import re

@@ -64,19 +64,31 @@ def build_network(file_name):
         graph.add_connection(source_names, target_names, probability)
     return graph
 
-def load_mutations(sample_id, db_cursor):
-    db_cursor.execute('SELECT gene FROM mutations WHERE sample_id = {}'.format(str(sample_id)))
+def load_mutations(sample_id, db_cursor, db_name):
+    db_cursor.execute('SELECT gene FROM {} WHERE sample_id = {}'.format(db_name, str(sample_id)))
     affected_genes = [item[0] for item in db_cursor.fetchall()]
     # load reference table from database
     db_cursor.execute('SELECT * from kegg_conversion')
-    conversion = []
+    conversion = {item[0]:item[1] for item in db_cursor.fetchall()}
+    affected_genes_kegg = {}
+    for item in affected_genes:
+        try:
+            affected_genes_kegg[item] = conversion[item]
+        except KeyError:
+            pass
+    print(affected_genes_kegg)
+    return affected_genes_kegg
 
 if __name__ == '__main__':
     conn = pymysql.connect(host='localhost', user='root', password='admin', db='bio')
     cursor = conn.cursor()
     graph = build_network('networks/cell_cycle.txt')
-    load_mutations(0, cursor)
-
+    mutations = load_mutations(7, cursor, 'mutations')
+    control = load_mutations(0, cursor, 'control')
+    node_set = [item for item in graph.nodes.keys()][20:30]
+    print(graph.simulate(node_set))
+    graph.knockout(control)
+    print(graph.simulate(node_set))
     '''
     for node in graph.nodes:
         data = graph.simulate([node])
